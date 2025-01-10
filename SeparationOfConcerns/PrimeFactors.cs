@@ -1,60 +1,93 @@
+using System;
+using System.Collections.Generic;
+
 public class PrimeFactors
 {
-    public static void Factor(List<int> numbers)
+    // Methode zur Berechnung aller Primzahlen bis zur größten Zahl in der Liste mit dem Sieb des Eratosthenes
+    private static List<int> SieveOfEratosthenes(int max)
     {
-        // first, compute prime numbers up to each number
-        var primesUpToNumber = new Dictionary<int, List<int>>();
-        foreach (var number in numbers)
+        var primes = new List<int>();
+        var isPrime = new bool[max + 1];
+        for (int i = 2; i <= max; i++)
         {
-            if (number < 1)
+            isPrime[i] = true;
+        }
+
+        for (int i = 2; i * i <= max; i++)
+        {
+            if (isPrime[i])
             {
-                throw new ArgumentException("negative numbers are not supported");
-            }
-            primesUpToNumber.Add(number, new List<int>());
-            for (var candidate = 2; candidate <= number; candidate++)
-            {
-                var isPrime = true;
-                for (var i = 2; i < candidate; i++)
+                for (int j = i * i; j <= max; j += i)
                 {
-                    if (candidate % i == 0)
-                    {
-                        isPrime = false;
-                        break;
-                    }
-                }
-                if (isPrime)
-                {
-                    primesUpToNumber[number].Add(candidate);
+                    isPrime[j] = false;
                 }
             }
         }
 
-        // second, factorize number by its primes
-        foreach (var number in primesUpToNumber.Keys)
+        for (int i = 2; i <= max; i++)
         {
-            var primes = primesUpToNumber[number];
-            var factors = new List<int>() { };
-            if (primes.Count == 0)
+            if (isPrime[i])
             {
-                factors.Add(number);
+                primes.Add(i);
             }
-            else
+        }
+
+        return primes;
+    }
+
+    // Methode zur Faktorisierung einer Liste von Zahlen
+    public static void Factor(List<int> numbers)
+    {
+        if (numbers == null || numbers.Count == 0)
+        {
+            throw new ArgumentException("Die Liste darf nicht leer sein.");
+        }
+
+        // Finde die größte Zahl in der Liste, um die Primzahlen bis zu dieser Zahl zu berechnen
+        int maxNumber = 0;
+        foreach (var number in numbers)
+        {
+            if (number < 1)
             {
-                var remainder = number;
-                for (var i = 0; i < primes.Count && remainder > 0;)
+                throw new ArgumentException("Negative Zahlen sind nicht unterstützt.");
+            }
+            if (number > maxNumber)
+            {
+                maxNumber = number;
+            }
+        }
+
+        // Berechne alle Primzahlen bis zur größten Zahl
+        var primes = SieveOfEratosthenes(maxNumber);
+
+        // Zweiter Schritt: Faktorisierung der Zahlen
+        foreach (var number in numbers)
+        {
+            var factors = new List<int>();
+            var remainder = number;
+
+            foreach (var prime in primes)
+            {
+                while (remainder % prime == 0)
                 {
-                    var prime = primes[i];
-                    if (remainder % prime == 0)
-                    {
-                        remainder /= primes[i];
-                        factors.Add(prime);
-                    }
-                    else
-                    {
-                        i++;
-                    }
+                    factors.Add(prime);
+                    remainder /= prime;
+                }
+
+                // Wenn der Rest 1 ist, brauchen wir keine weiteren Primzahlen mehr zu überprüfen
+                if (remainder == 1)
+                {
+                    break;
                 }
             }
+
+            // Falls der Rest eine Primzahl ist, die größer als die größte berechnete Primzahl ist
+            if (remainder > 1)
+            {
+                factors.Add(remainder);
+            }
+
+            // Ausgabe der Primfaktorzerlegung
             Console.Write($"{number}: ");
             foreach (var factor in factors)
             {
